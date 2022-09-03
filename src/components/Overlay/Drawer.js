@@ -1,6 +1,38 @@
-import React from "react";
+import React, { useState } from "react";
+import Info from "../Info/Info";
+import axios from "axios";
 
 function Drawer(props) {
+  const [isOrderComplete, setIsOrderComplete] = useState(false);
+  const [orderId, setOrderId] = useState(null);
+
+  function computedPrice() {
+    return props.cartItems.reduce((acc, item) => {
+      return Math.round(acc + +item.price);
+    }, 0);
+  }
+
+  async function onClickOrder() {
+    try {
+      const { data } = await axios.post(
+        "https://62fb5d21abd610251c06d760.mockapi.io/orders",
+        props.cartItems
+      );
+
+      setIsOrderComplete((prev) => !prev);
+      setOrderId(data.mockID);
+      props.setCartItems([]);
+
+      for (let index = 0; index < props.cartItems.length; index++) {
+        await axios.delete(
+          `https://62fb5d21abd610251c06d760.mockapi.io/cart/${props.cartItems[index].mockID}`
+        );
+      }
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+
   return (
     <div className="overlay">
       <div className="drawer d-flex flex-column">
@@ -48,38 +80,34 @@ function Drawer(props) {
                 <li className="d-flex justify-between">
                   <span>Итого</span>
                   <div></div>
-                  <b>21 498 руб.</b>
+                  <b>{computedPrice()} руб.</b>
                 </li>
                 <li className="d-flex justify-between">
                   <span>Налог 5%</span>
                   <div></div>
-                  <b>1074 руб.</b>
+                  <b>{Math.round(computedPrice() * 0.05)} руб.</b>
                 </li>
               </ul>
-              <button className="greenBtn">
+              <button onClick={onClickOrder} className="greenBtn">
                 Оформить заказ
                 <img src="/images/Arrow.svg" alt="" />
               </button>
             </div>
           </>
+        ) : isOrderComplete ? (
+          <Info
+            title="Заказ оформлен!"
+            text={`Ваш заказ #${orderId} скоро будет передан курьерской доставке`}
+            src="/images/cart-empty2.png"
+            onClickCart={props.onClickCart}
+          />
         ) : (
-          <div className="cartEmpty d-flex align-center justify-center flex-column flex">
-            <img
-              src="/images/cart-empty.png"
-              alt=""
-              className="mb-20"
-              width="120px"
-              height="120px"
-            />
-            <h2>Корзина пустая</h2>
-            <p className="opacity-6">
-              Добавьте хотя бы одну пару кроссовок, чтобы сделать заказ.
-            </p>
-            <button className="greenBtn" onClick={props.onClickCart}>
-              Вернуться назад
-              <img src="/images/Arrow.svg" alt="" />
-            </button>
-          </div>
+          <Info
+            title="Корзина пустая"
+            text="Добавьте хотя бы одну пару кроссовок, чтобы сделать заказ."
+            src="/images/cart-empty.png"
+            onClickCart={props.onClickCart}
+          />
         )}
       </div>
     </div>

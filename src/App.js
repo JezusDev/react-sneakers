@@ -114,6 +114,7 @@ function App() {
             onClickCart={toggleDrawer}
             cartItems={cartItems}
             onRemove={onAddToCart}
+            setCartItems={setCartItems}
           />
         )}
 
